@@ -2525,6 +2525,8 @@ The system will execute this command and return the stdout/stderr to you.
         self.io.tool_output()
         self.io.tool_output(f"Running in k8s sandbox: {cmd}")
 
+        sandbox = None
+
         try:
             from k8s_agent_sandbox import SandboxClient
             from k8s_agent_sandbox.models import SandboxLocalTunnelConnectionConfig
@@ -2559,4 +2561,5 @@ The system will execute this command and return the stdout/stderr to you.
             self.io.tool_error(err)
             return err
         finally:
-            sandbox.terminate()
+            if sandbox:
+                sandbox.terminate()
