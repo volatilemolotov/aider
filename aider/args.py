@@ -719,6 +719,30 @@ def get_parser(default_config_files, git_root):
     )
 
     ######
+    group = parser.add_argument_group("Execution & Sandboxing")
+    group.add_argument(
+        "--sandbox-type",
+        type=str,
+        metavar="TYPE",
+        help="Enable the autonomous agent sandbox for code testing (e.g., 'k8s-agent-sandbox').",
+        default=None,
+    )
+    group.add_argument(
+        "--sandbox-namespace",
+        type=str,
+        metavar="NAMESPACE",
+        help="Specify the Kubernetes namespace where the sandbox should be deployed.",
+        default=None,
+    )
+    group.add_argument(
+        "--sandbox-warmpool",
+        type=str,
+        metavar="WARMPOOL",
+        help="Specify the name of the warm pool template to use for faster provisioning.",
+        default=None,
+    )
+
+    ######
     group = parser.add_argument_group("Other settings")
     group.add_argument(
         "--disable-playwright",
