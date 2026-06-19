@@ -11,8 +11,8 @@ class TestK8sSandbox(unittest.TestCase):
         self.coder = MagicMock(spec=Coder)
         self.coder.io = MagicMock(spec=InputOutput)
         self.coder.sandbox_type = "k8s-agent-sandbox"
-        self.coder.sandbox_namespace = "default"
-        self.coder.sandbox_warmpool = "default-pool"
+        self.coder.k8s_sandbox_namespace = "default"
+        self.coder.k8s_sandbox_warmpool = "default-pool"
         self.coder.partial_response_content = ""
 
         # Bind the methods under test to our mock coder instance
