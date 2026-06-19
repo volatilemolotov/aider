@@ -35,6 +35,15 @@ export OPENAI_API_KEY=sk-***
 python -m aider --model o3-mini --api-key openai=$OPENAI_API_KEY --sandbox-type k8s-agent-sandbox --sandbox-namespace default --sandbox-warmpool simple-sandbox-warmpool
 ```
 
+or using the config file names .aider.conf.yml:
+```yml
+model: o3-mini
+api-key: 
+sandbox-type: k8s-agent-sandbox
+k8s-sandbox-namespace: agents-isolated-ns
+k8s-sandbox-warmpool: python-3-11-pool
+```
+
 Ask: `can you check what is os in my k8s sandbox?`
 
 The output should look like this:

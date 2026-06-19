@@ -313,8 +313,8 @@ class Coder:
         stream=True,
         use_git=True,
         sandbox_type=None,
-        sandbox_namespace=None,
-        sandbox_warmpool=None,
+        k8s_sandbox_namespace=None,
+        k8s_sandbox_warmpool=None,
         cur_messages=None,
         done_messages=None,
         restore_chat_history=False,
@@ -447,8 +447,9 @@ class Coder:
                 pass
 
         self.sandbox_type = sandbox_type
-        self.sandbox_namespace = sandbox_namespace
-        self.sandbox_warmpool = sandbox_warmpool
+        if self.sandbox_type == "k8s-agent-sandbox":
+            self.k8s_sandbox_namespace = k8s_sandbox_namespace
+            self.k8s_sandbox_warmpool = k8s_sandbox_warmpool
 
         if self.repo:
             self.root = self.repo.root
@@ -2533,10 +2534,10 @@ The system will execute this command and return the stdout/stderr to you.
 
             client = SandboxClient(
                 connection_config=SandboxLocalTunnelConnectionConfig(
-                    router_namespace=self.sandbox_namespace
+                    router_namespace=self.k8s_sandbox_namespace
                 )
             )
-            sandbox = client.create_sandbox(warmpool=self.sandbox_warmpool)
+            sandbox = client.create_sandbox(warmpool=self.k8s_sandbox_warmpool)
 
             # CRITICAL: Sync Aider's current tracked files to the sandbox filesystem.
             # Example: sandbox.upload_dir(self.root, "/app")

@@ -728,14 +728,14 @@ def get_parser(default_config_files, git_root):
         default=None,
     )
     group.add_argument(
-        "--sandbox-namespace",
+        "--k8s-sandbox-namespace",
         type=str,
         metavar="NAMESPACE",
         help="Specify the Kubernetes namespace where the sandbox should be deployed.",
         default=None,
     )
     group.add_argument(
-        "--sandbox-warmpool",
+        "--k8s-sandbox-warmpool",
         type=str,
         metavar="WARMPOOL",
         help="Specify the name of the warm pool template to use for faster provisioning.",
