@@ -40,8 +40,8 @@ or using the config file names .aider.conf.yml:
 model: o3-mini
 api-key: 
 sandbox-type: k8s-agent-sandbox
-k8s-sandbox-namespace: agents-isolated-ns
-k8s-sandbox-warmpool: python-3-11-pool
+k8s-sandbox-namespace: default
+k8s-sandbox-warmpool: simple-sandbox-warmpool
 ```
 
 Ask: `can you check what is os in my k8s sandbox?`
