@@ -312,6 +312,9 @@ class Coder:
         verbose=False,
         stream=True,
         use_git=True,
+        sandbox_type=None,
+        k8s_sandbox_namespace=None,
+        k8s_sandbox_warmpool=None,
         cur_messages=None,
         done_messages=None,
         restore_chat_history=False,
@@ -442,6 +445,11 @@ class Coder:
                 )
             except FileNotFoundError:
                 pass
+
+        self.sandbox_type = sandbox_type
+        if self.sandbox_type == "k8s-agent-sandbox":
+            self.k8s_sandbox_namespace = k8s_sandbox_namespace
+            self.k8s_sandbox_warmpool = k8s_sandbox_warmpool
 
         if self.repo:
             self.root = self.repo.root
@@ -1194,6 +1202,15 @@ class Coder:
                 platform=platform_text
             )
             rename_with_shell = ""
+        if self.sandbox_type == "k8s-agent-sandbox":
+            final_reminders.append("""
+You have access to an isolated Kubernetes sandbox. If you need to safely execute code, test scripts, or validate an environment, output your command wrapped in a sandbox block like this:
+
+```sandbox
+echo "test"
+```
+The system will execute this command and return the stdout/stderr to you.
+""")
 
         if user_lang:  # user_lang is the result of self.get_user_language()
             language = user_lang
@@ -1595,6 +1612,14 @@ class Coder:
 
         if self.reflected_message:
             return
+
+        if self.sandbox_type == "k8s-agent-sandbox":
+            sandbox_cmd = self.parse_sandbox_command()
+            if sandbox_cmd:
+                sandbox_output = self.run_k8s_sandbox(sandbox_cmd)
+                if sandbox_output:
+                    self.reflected_message = sandbox_output
+                    return
 
         if edited and self.auto_lint:
             lint_errors = self.lint_edited(edited)
@@ -2483,3 +2508,59 @@ class Coder:
             line_plural = "line" if num_lines == 1 else "lines"
             self.io.tool_output(f"Added {num_lines} {line_plural} of output to the chat.")
             return accumulated_output
+
+    def parse_sandbox_command(self):
+        """Extract the command from the LLM's ```sandbox block."""
+        if not self.sandbox_type or not self.partial_response_content:
+            return None
+
+        pattern = re.compile(r"```sandbox\n(.*?)\n```", re.DOTALL)
+        match = pattern.search(self.partial_response_content)
+
+        if match:
+            return match.group(1).strip()
+        return None
+
+    def run_k8s_sandbox(self, cmd):
+        """Execute the extracted command in the Kubernetes Sandbox."""
+        self.io.tool_output()
+        self.io.tool_output(f"Running in k8s sandbox: {cmd}")
+
+        sandbox = None
+
+        try:
+            from k8s_agent_sandbox import SandboxClient
+            from k8s_agent_sandbox.models import SandboxLocalTunnelConnectionConfig
+
+            client = SandboxClient(
+                connection_config=SandboxLocalTunnelConnectionConfig(
+                    router_namespace=self.k8s_sandbox_namespace
+                )
+            )
+            sandbox = client.create_sandbox(warmpool=self.k8s_sandbox_warmpool)
+
+            # CRITICAL: Sync Aider's current tracked files to the sandbox filesystem.
+            # Example: sandbox.upload_dir(self.root, "/app")
+
+            result = sandbox.commands.run(cmd)
+
+            feedback = f"Executed `{cmd}` in the k8s sandbox.\n"
+            if result.stdout:
+                feedback += f"STDOUT:\n{result.stdout}\n"
+            if result.stderr:
+                feedback += f"STDERR:\n{result.stderr}\n"
+
+            return feedback
+
+        except ImportError:
+            err = "Error: k8s_agent_sandbox SDK is not installed. Run `pip install k8s_agent_sandbox`."
+            self.io.tool_error(err)
+            return err
+
+        except Exception as e:
+            err = f"Sandbox execution failed: {str(e)}"
+            self.io.tool_error(err)
+            return err
+        finally:
+            if sandbox:
+                sandbox.terminate()
